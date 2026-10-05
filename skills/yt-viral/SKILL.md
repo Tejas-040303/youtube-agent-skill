@@ -35,6 +35,11 @@ The multiple is the signal. The formula line is a judgement about the TITLE, mat
 [the 21 formulas](../yt-script/hooks.json) - it is not a claim about why the video worked, and you
 should say so when you present it.
 
+Before calling anything a pattern, read the formula table's **lift** column: a formula's share of
+the outliers divided by its share of everything collected. If half the channel's titles are
+questions, half its outliers will be too, and that says nothing. Only a formula clearly above 1.0,
+on more than a handful of videos, is worth naming.
+
 What to hand back: the top five with their multiples, the formula each used, and the ONE structural
 thing they share. Then the harder line - which of those the user could actually make this week, in
 their voice, with what they have.

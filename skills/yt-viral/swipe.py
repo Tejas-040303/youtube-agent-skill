@@ -15,6 +15,11 @@ to mean anything - the tool says so rather than quietly ranking on noise.
 
 The formula comes from skills/yt-script/hooks.json, matched against the TITLE. It is a judgement
 about the words on screen, not a claim about why the video worked.
+
+BASE RATES. "13 of the outliers are The Question" means nothing on its own: if half of everything
+collected is The Question, half of the outliers will be too. So each formula is reported with its
+share of the outliers AND its share of every scored video, and the ratio between them (lift). A lift
+near 1.0 means the outliers use that formula no more than the channel does anyway.
 """
 import json, os, re, statistics, sys
 
@@ -28,6 +33,20 @@ def classify(title):
         if n: scored.append((n, f["name"]))
     scored.sort(reverse=True)
     return scored[0][1] if scored else "Unclassified"
+
+def formula_rates(out, scored):
+    """Each formula's share of the outliers next to its share of everything scored."""
+    if not out or not scored: return []
+    rows = []
+    for f in sorted({r["formula"] for r in out}):
+        n_out = sum(1 for r in out if r["formula"] == f)
+        n_all = sum(1 for r in scored if r["formula"] == f)
+        share_out, share_all = n_out / len(out), n_all / len(scored)
+        rows.append({"formula": f, "outliers": n_out, "outlier_share": round(share_out, 3),
+                     "all": n_all, "all_share": round(share_all, 3),
+                     "lift": round(share_out / share_all, 2) if share_all else None})
+    rows.sort(key=lambda r: (-r["outliers"], r["formula"]))
+    return rows
 
 def main():
     a = sys.argv[1:]
@@ -51,9 +70,13 @@ def main():
             out.append({"channel": ch, "title": v.get("title", ""), "views": int(v.get("views", 0) or 0),
                         "median": int(med), "multiple": round(m, 2),
                         "formula": classify(v.get("title", "")), "url": v.get("url", "")})
-    out = [r for r in out if r["multiple"] >= lo]
+    scored = out
+    out = [r for r in scored if r["multiple"] >= lo]
     out.sort(key=lambda r: -r["multiple"])
-    if as_json: print(json.dumps({"outliers": out, "skipped_thin_channels": thin}, indent=1)); return
+    rates = formula_rates(out, scored)
+    if as_json:
+        print(json.dumps({"outliers": out, "formula_rates": rates, "skipped_thin_channels": thin},
+                         indent=1)); return
     print(f"\n  {len(rows)} videos across {len(by)} channels, outliers at {lo}x or better\n")
     for r in out[:25]:
         print(f"    {r['multiple']:5.2f}x  {r['views']:>9,}  vs {r['median']:>9,} median   {r['channel'][:22]:<22} {r['title'][:52]}")
@@ -62,12 +85,14 @@ def main():
     if thin:
         print(f"\n  skipped {len(thin)} channel(s) with under 4 videos collected - a median off one or")
         print( "  two videos is not a median: " + ", ".join(f"{c} ({n})" for c, n in thin[:6]))
-    counts = {}
-    for r in out: counts[r["formula"]] = counts.get(r["formula"], 0) + 1
-    if counts:
-        print("\n  formulas among the outliers")
-        for f, n in sorted(counts.items(), key=lambda x: -x[1]):
-            print(f"    {n:2d}x  {f}")
+    if rates:
+        print(f"\n  formulas among the {len(out)} outliers, against all {len(scored)} scored videos")
+        print("    outliers        all scored      lift  formula")
+        for r in rates:
+            print(f"    {r['outliers']:3d}  {r['outlier_share']:4.0%}       {r['all']:3d}  {r['all_share']:4.0%}"
+                  f"      {r['lift']:4.2f}  {r['formula']}")
+        print("    lift is outlier share / overall share. Near 1.0, the outliers use it no more than the")
+        print("    channels do anyway; a high lift on a handful of videos is still a handful of videos.")
     print()
 
 if __name__ == "__main__":
