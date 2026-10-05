@@ -14,7 +14,13 @@ The retention graph is the only honest feedback YouTube gives you. Almost nobody
 ```bash
 python3 retention.py retention.csv --duration 600
 python3 retention.py retention.csv --transcript transcript.srt
+python3 retention.py retention.csv --duration 45 --hook-seconds 3   # a Short
 ```
+
+For a Short, always pass `--duration` and `--hook-seconds`. The position column can be seconds or a
+percentage, and a 45-second Short in seconds looks like a percentage axis unless the tool knows the
+length; the default 30-second hook window would also cover two thirds of it. `--axis` settles the
+first question outright. Retention above 100% is the Short looping, not an error.
 
 Getting the file: Studio -> a video -> Analytics -> Engagement -> the audience-retention chart ->
 the download icon -> "Audience retention".
