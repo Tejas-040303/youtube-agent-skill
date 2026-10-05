@@ -15,6 +15,7 @@ thumbnail repeats the title, and half the click surface says the same thing twic
 ```bash
 python3 title.py --title "..." --thumb "AI RAN IT"
 python3 title.py titles.txt            # one per line, ranked
+python3 title.py titles.txt --names "Simon Stevin"   # names it cannot see on its own
 ```
 
 ## Before you write
